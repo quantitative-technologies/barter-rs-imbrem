@@ -9,15 +9,20 @@ use crate::{
     },
     instrument::InstrumentData,
     subscriber::{validator::WebSocketSubValidator, WebSocketSubscriber},
-    subscription::{trade::PublicTrades, Map},
+    subscription::{book::OrderBooksL1, trade::PublicTrades, Map},
     transformer::stateless::StatelessTransformer,
     ExchangeWsStream,
 };
 use barter_integration::{error::SocketError, protocol::websocket::WsMessage};
+use book::BybitOrderBook;
 use serde::de::{Error, Unexpected};
 use std::{fmt::Debug, marker::PhantomData, time::Duration};
 use tokio::time;
+use trade::BybitTrade;
 use url::Url;
+
+/// Order book types for Bybit
+pub mod book;
 
 /// Defines the type that translates a Barter [`Subscription`](crate::subscription::Subscription)
 /// into an exchange [`Connector`] specific channel used for generating [`Connector::requests`].
@@ -112,8 +117,19 @@ where
     Instrument: InstrumentData,
     Server: ExchangeServer + Debug + Send + Sync,
 {
-    type Stream =
-        ExchangeWsStream<StatelessTransformer<Self, Instrument::Id, PublicTrades, BybitMessage>>;
+    type Stream = ExchangeWsStream<
+        StatelessTransformer<Self, Instrument::Id, PublicTrades, BybitMessage<BybitTrade>>,
+    >;
+}
+
+impl<Instrument, Server> StreamSelector<Instrument, OrderBooksL1> for Bybit<Server>
+where
+    Instrument: InstrumentData,
+    Server: ExchangeServer + Debug + Send + Sync,
+{
+    type Stream = ExchangeWsStream<
+        StatelessTransformer<Self, Instrument::Id, OrderBooksL1, BybitMessage<BybitOrderBook>>,
+    >;
 }
 
 impl<'de, Server> serde::Deserialize<'de> for Bybit<Server>

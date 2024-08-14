@@ -4,7 +4,7 @@ use crate::{
         bybit::{channel::BybitChannel, subscription::BybitResponse, trade::BybitTrade},
         ExchangeId,
     },
-    subscription::trade::PublicTrade,
+    subscription::{book::OrderBookL1, trade::PublicTrade},
     Identifier,
 };
 use barter_integration::model::SubscriptionId;
@@ -14,12 +14,14 @@ use serde::{
     Deserialize, Serialize,
 };
 
+use super::book::BybitOrderBook;
+
 /// [`Bybit`](super::Bybit) websocket message supports both [`BybitTrade`](BybitTrade) and [`BybitResponse`](BybitResponse) .
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum BybitMessage {
+pub enum BybitMessage<T> {
     Response(BybitResponse),
-    Trade(BybitTrade),
+    Event(T),
 }
 
 /// ### Raw Payload Examples
@@ -76,6 +78,9 @@ where
             "{}|{market}",
             BybitChannel::TRADES.0
         ))),
+        (Some("orderbook"), Some(levels), Some(market)) => {
+            Ok(SubscriptionId::from(format!("orderbook.{levels}|{market}")))
+        }
         _ => Err(Error::invalid_value(
             Unexpected::Str(input),
             &"invalid message type expected pattern: <type>.<symbol>",
@@ -83,22 +88,50 @@ where
     }
 }
 
-impl Identifier<Option<SubscriptionId>> for BybitMessage {
+impl Identifier<Option<SubscriptionId>> for BybitMessage<BybitTrade> {
     fn id(&self) -> Option<SubscriptionId> {
         match self {
-            BybitMessage::Trade(trade) => Some(trade.subscription_id.clone()),
+            BybitMessage::Event(trade) => Some(trade.subscription_id.clone()),
             _ => None,
         }
     }
 }
 
-impl<InstrumentId: Clone> From<(ExchangeId, InstrumentId, BybitMessage)>
+impl Identifier<Option<SubscriptionId>> for BybitMessage<BybitOrderBook> {
+    fn id(&self) -> Option<SubscriptionId> {
+        match self {
+            BybitMessage::Event(book) => Some(book.subscription_id.clone()),
+            _ => None,
+        }
+    }
+}
+
+impl<InstrumentId: Clone> From<(ExchangeId, InstrumentId, BybitMessage<BybitTrade>)>
     for MarketIter<InstrumentId, PublicTrade>
 {
-    fn from((exchange_id, instrument, message): (ExchangeId, InstrumentId, BybitMessage)) -> Self {
+    fn from(
+        (exchange_id, instrument, message): (ExchangeId, InstrumentId, BybitMessage<BybitTrade>),
+    ) -> Self {
         match message {
             BybitMessage::Response(_) => Self(vec![]),
-            BybitMessage::Trade(trade) => Self::from((exchange_id, instrument, trade)),
+            BybitMessage::Event(trade) => Self::from((exchange_id, instrument, trade)),
+        }
+    }
+}
+
+impl<InstrumentId: Clone> From<(ExchangeId, InstrumentId, BybitMessage<BybitOrderBook>)>
+    for MarketIter<InstrumentId, OrderBookL1>
+{
+    fn from(
+        (exchange_id, instrument, message): (
+            ExchangeId,
+            InstrumentId,
+            BybitMessage<BybitOrderBook>,
+        ),
+    ) -> Self {
+        match message {
+            BybitMessage::Response(_) => Self(vec![]),
+            BybitMessage::Event(book) => Self::from((exchange_id, instrument, book)),
         }
     }
 }

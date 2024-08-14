@@ -48,8 +48,8 @@ impl From<OxkLevel> for Level {
 impl<InstrumentId: Clone> From<(ExchangeId, InstrumentId, OkxOrderBook)>
     for MarketIter<InstrumentId, OrderBookL1>
 {
-    fn from((exchange_id, instrument, trades): (ExchangeId, InstrumentId, OkxOrderBook)) -> Self {
-        trades
+    fn from((exchange_id, instrument, book): (ExchangeId, InstrumentId, OkxOrderBook)) -> Self {
+        book
             .data
             .into_iter()
             .map(|mut book| {
@@ -90,7 +90,6 @@ mod tests {
 
             let tests = vec![
                 TestCase {
-                    // TC0: valid L1 OkxOrderBook::Data(KrakenOrderBookL1Inner)
                     input: r#"
                         {
                             "arg": {
@@ -134,7 +133,6 @@ mod tests {
                     }),
                 },
                 TestCase {
-                    // TC0: valid L1 OkxOrderBook::Data(KrakenOrderBookL1Inner)
                     input: r#"
                         {
                             "arg": {

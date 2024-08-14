@@ -20,7 +20,7 @@ impl OkxChannel {
     /// [`Okx`] L1 order books channel channel.
     ///
     /// See docs: <https://www.okx.com/docs-v5/en/#websocket-api-public-channel-trades-channel>
-    pub const L1_BOOKS: Self = Self("bbo-tbt");
+    pub const ORDER_BOOK_L1: Self = Self("bbo-tbt");
 }
 
 impl<Instrument> Identifier<OkxChannel> for Subscription<Okx, Instrument, PublicTrades> {
@@ -31,7 +31,7 @@ impl<Instrument> Identifier<OkxChannel> for Subscription<Okx, Instrument, Public
 
 impl<Instrument> Identifier<OkxChannel> for Subscription<Okx, Instrument, OrderBooksL1> {
     fn id(&self) -> OkxChannel {
-        OkxChannel::L1_BOOKS
+        OkxChannel::ORDER_BOOK_L1
     }
 }
 
