@@ -53,8 +53,8 @@ impl<InstrumentId: Clone> From<(ExchangeId, InstrumentId, BybitOrderBook)>
             kind: OrderBookL1 {
                 last_update_time: book.time, //TODO: fix me...
                 // TODO: give actual errors...
-                best_bid: book.data.b.pop().unwrap().into(),
-                best_ask: book.data.a.pop().unwrap().into(),
+                best_bid: book.data.b.pop().map(Level::from).unwrap_or_default(),
+                best_ask: book.data.a.pop().map(Level::from).unwrap_or_default(),
             },
         })]
         .into_iter()
