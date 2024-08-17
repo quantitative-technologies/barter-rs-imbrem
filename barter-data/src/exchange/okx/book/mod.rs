@@ -19,7 +19,7 @@ pub struct OkxOrderBookInner {
     bids: Vec<OxkLevel>,
     #[serde(deserialize_with = "barter_integration::de::de_str_f64_epoch_ms_as_datetime_utc")]
     ts: DateTime<Utc>,
-    checksum: i64,
+    checksum: Option<i64>,
     #[serde(rename = "seqId")]
     seq_id: i64,
 }
@@ -127,7 +127,7 @@ mod tests {
                             ts: datetime_utc_from_epoch_duration(Duration::from_millis(
                                 1_597_026_383_085,
                             )),
-                            checksum: -855_196_043,
+                            checksum: Some(-855_196_043),
                             seq_id: 123_456,
                         }],
                     }),
@@ -276,7 +276,7 @@ mod tests {
                             ts: datetime_utc_from_epoch_duration(Duration::from_millis(
                                 1_597_026_383_085,
                             )),
-                            checksum: -855_196_043,
+                            checksum: Some(-855_196_043),
                             seq_id: 123_456,
                         }],
                     }),
