@@ -104,7 +104,7 @@ where
                     // Don't log pong messages
                     if let DataError::Socket(SocketError::Deserialise { payload, .. }) = &error {
                         if payload == "pong" {
-                            break;
+                            continue;
                         }
                     }
                     warn!(
