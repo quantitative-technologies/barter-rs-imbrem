@@ -6,6 +6,7 @@ use crate::{
     subscription::{Subscription, SubscriptionKind},
     Identifier, MarketStream,
 };
+use barter_integration::error::SocketError;
 use futures::StreamExt;
 use std::time::Duration;
 use tokio::sync::mpsc;
@@ -100,6 +101,12 @@ where
 
                 // If non-terminal DataError: log & continue
                 Err(error) => {
+                    // Don't log pong messages
+                    if let DataError::Socket(SocketError::Deserialise { payload, .. }) = &error {
+                        if payload == "pong" {
+                            continue;
+                        }
+                    }
                     warn!(
                         %exchange,
                         %error,

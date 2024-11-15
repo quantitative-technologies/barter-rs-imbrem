@@ -7,8 +7,10 @@ use barter_integration::model::{Exchange, Side};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use super::message::Snapshot;
+
 /// Terse type alias for an [`BybitTrade`](BybitTradeInner) real-time trades WebSocket message.
-pub type BybitTrade = BybitPayload<Vec<BybitTradeInner>>;
+pub type BybitTrade = BybitPayload<Vec<BybitTradeInner>, Snapshot>;
 
 /// ### Raw Payload Examples
 /// See docs: <https://bybit-exchange.github.io/docs/v5/websocket/public/trade>
@@ -250,6 +252,7 @@ mod tests {
                                 id: "20f43950-d8dd-5b31-9112-a178eb6023af".to_string(),
                             },
                         ],
+                        ..Default::default()
                     }),
                 },
                 // TC1: input BybitTrade is invalid w/ no subscription_id

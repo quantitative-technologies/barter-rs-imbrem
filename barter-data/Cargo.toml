@@ -49,3 +49,4 @@ chrono = { workspace = true, features = ["serde"]}
 derive_more = { workspace = true }
 itertools = { workspace = true }
 vecmap-rs = { workspace = true }
+#derive-new = { workspace = true }

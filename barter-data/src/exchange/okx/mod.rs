@@ -5,15 +5,19 @@ use crate::{
     exchange::{Connector, ExchangeId, ExchangeSub, PingInterval, StreamSelector},
     instrument::InstrumentData,
     subscriber::{validator::WebSocketSubValidator, WebSocketSubscriber},
-    subscription::trade::PublicTrades,
+    subscription::{book::OrderBooksL1, trade::PublicTrades},
     transformer::stateless::StatelessTransformer,
     ExchangeWsStream,
 };
 use barter_integration::{error::SocketError, protocol::websocket::WsMessage};
 use barter_macro::{DeExchange, SerExchange};
+use book::OkxOrderBook;
 use serde_json::json;
 use std::time::Duration;
 use url::Url;
+
+/// Order book types for [`Okx`]
+pub mod book;
 
 /// Defines the type that translates a Barter [`Subscription`](crate::subscription::Subscription)
 /// into an exchange [`Connector`] specific channel used for generating [`Connector::requests`].
@@ -22,6 +26,9 @@ pub mod channel;
 /// Defines the type that translates a Barter [`Subscription`](crate::subscription::Subscription)
 /// into an exchange [`Connector`] specific market used for generating [`Connector::requests`].
 pub mod market;
+
+/// [`OkxMessage`](message::OkxMessage) type for [`Okx`].
+pub mod message;
 
 /// [`Subscription`](crate::subscription::Subscription) response type and response
 /// [`Validator`](barter_integration::Validator) for [`Okx`].
@@ -84,4 +91,12 @@ where
 {
     type Stream =
         ExchangeWsStream<StatelessTransformer<Self, Instrument::Id, PublicTrades, OkxTrades>>;
+}
+
+impl<Instrument> StreamSelector<Instrument, OrderBooksL1> for Okx
+where
+    Instrument: InstrumentData,
+{
+    type Stream =
+        ExchangeWsStream<StatelessTransformer<Self, Instrument::Id, OrderBooksL1, OkxOrderBook>>;
 }
