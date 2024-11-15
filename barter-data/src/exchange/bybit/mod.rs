@@ -14,7 +14,6 @@ use crate::{
     ExchangeWsStream,
 };
 use barter_integration::{error::SocketError, protocol::websocket::WsMessage};
-use book::BybitOrderBook;
 use serde::de::{Error, Unexpected};
 use std::{fmt::Debug, marker::PhantomData, time::Duration};
 use tokio::time;

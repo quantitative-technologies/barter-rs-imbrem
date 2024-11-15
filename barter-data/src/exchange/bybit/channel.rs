@@ -24,7 +24,7 @@ impl BybitChannel {
     /// [`Bybit`] order book level 2 channel name.
     ///
     /// See docs: <https://bybit-exchange.github.io/docs/v5/websocket/public/orderbook>
-    pub const ORDER_BOOK_L2: Self = Self("orderbook.200");
+    pub const ORDER_BOOK_L2: Self = Self("orderbook.1");
 }
 
 impl<Server, Instrument> Identifier<BybitChannel>
