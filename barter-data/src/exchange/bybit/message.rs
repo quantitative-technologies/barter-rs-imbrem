@@ -1,3 +1,5 @@
+use std::any::TypeId;
+
 use crate::{
     event::MarketIter,
     exchange::{
@@ -14,7 +16,7 @@ use serde::{
     Deserialize, Serialize,
 };
 
-use super::book::BybitOrderBook;
+//use super::book::BybitOrderBook;
 
 /// [`Bybit`](super::Bybit) websocket message supports both [`BybitTrade`](BybitTrade) and [`BybitResponse`](BybitResponse) .
 #[derive(Debug, Serialize, Deserialize)]
@@ -22,6 +24,25 @@ use super::book::BybitOrderBook;
 pub enum BybitMessage<T> {
     Response(BybitResponse),
     Event(T),
+}
+pub trait ValidateType {
+    fn validate_type(val: &String) -> bool;
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub struct Snapshot;
+impl ValidateType for Snapshot {
+    fn validate_type(val: &String) -> bool {
+        val == "snapshot"
+    }
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub struct Delta;
+impl ValidateType for Delta {
+    fn validate_type(val: &String) -> bool {
+        val == "delta"
+    }
 }
 
 /// ### Raw Payload Examples
@@ -47,11 +68,11 @@ pub enum BybitMessage<T> {
 /// }
 /// ```
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Deserialize, Serialize)]
-pub struct BybitPayload<T> {
+pub struct BybitPayload<T, V: ValidateType> {
     #[serde(alias = "topic", deserialize_with = "de_message_subscription_id")]
     pub subscription_id: SubscriptionId,
 
-    #[serde(rename = "type")]
+    #[serde(rename = "type", deserialize_with = "de_message_type::<__D, V>")]
     pub r#type: String,
 
     #[serde(
@@ -60,6 +81,28 @@ pub struct BybitPayload<T> {
     )]
     pub time: DateTime<Utc>,
     pub data: T,
+    #[serde(default)]
+    //pub _validate_type: V
+    pub _phantom: std::marker::PhantomData<V>,
+}
+
+impl<T, V: ValidateType> BybitPayload<T, V> {
+    pub fn validate_type(&self) -> bool {
+        V::validate_type(&self.r#type)
+    }
+}
+
+impl<T: Default, V: ValidateType + Default> Default for BybitPayload<T, V> {
+    fn default() -> Self {
+        Self {
+            subscription_id: SubscriptionId::from("orderbook.50|DEFAULT"),
+            r#type: "snapshot".to_string(),
+            time: Utc::now(),
+            data: T::default(),
+            //_validate_type: V::default(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
 }
 
 /// Deserialize a [`BybitPayload`] "s" (eg/ "publicTrade.BTCUSDT") as the associated
@@ -88,6 +131,20 @@ where
     }
 }
 
+pub fn de_message_type<'de, D, V: ValidateType>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    let input = <&str as serde::Deserialize>::deserialize(deserializer)?;
+    if !V::validate_type(&input.to_string()) {
+        return Err(Error::invalid_value(
+            Unexpected::Str(input),
+            &"invalid message type",
+        ));
+    }
+    Ok(input.to_string())
+}
+
 impl Identifier<Option<SubscriptionId>> for BybitMessage<BybitTrade> {
     fn id(&self) -> Option<SubscriptionId> {
         match self {
@@ -97,14 +154,14 @@ impl Identifier<Option<SubscriptionId>> for BybitMessage<BybitTrade> {
     }
 }
 
-impl Identifier<Option<SubscriptionId>> for BybitMessage<BybitOrderBook> {
-    fn id(&self) -> Option<SubscriptionId> {
-        match self {
-            BybitMessage::Event(book) => Some(book.subscription_id.clone()),
-            _ => None,
-        }
-    }
-}
+// impl Identifier<Option<SubscriptionId>> for BybitMessage<BybitOrderBook> {
+//     fn id(&self) -> Option<SubscriptionId> {
+//         match self {
+//             BybitMessage::Event(book) => Some(book.subscription_id.clone()),
+//             _ => None,
+//         }
+//     }
+// }
 
 impl<InstrumentId: Clone> From<(ExchangeId, InstrumentId, BybitMessage<BybitTrade>)>
     for MarketIter<InstrumentId, PublicTrade>
@@ -119,22 +176,22 @@ impl<InstrumentId: Clone> From<(ExchangeId, InstrumentId, BybitMessage<BybitTrad
     }
 }
 
-impl<InstrumentId: Clone> From<(ExchangeId, InstrumentId, BybitMessage<BybitOrderBook>)>
-    for MarketIter<InstrumentId, OrderBookL1>
-{
-    fn from(
-        (exchange_id, instrument, message): (
-            ExchangeId,
-            InstrumentId,
-            BybitMessage<BybitOrderBook>,
-        ),
-    ) -> Self {
-        match message {
-            BybitMessage::Response(_) => Self(vec![]),
-            BybitMessage::Event(book) => Self::from((exchange_id, instrument, book)),
-        }
-    }
-}
+// impl<InstrumentId: Clone> From<(ExchangeId, InstrumentId, BybitMessage<BybitOrderBook>)>
+//     for MarketIter<InstrumentId, OrderBookL1>
+// {
+//     fn from(
+//         (exchange_id, instrument, message): (
+//             ExchangeId,
+//             InstrumentId,
+//             BybitMessage<BybitOrderBook>,
+//         ),
+//     ) -> Self {
+//         match message {
+//             BybitMessage::Response(_) => Self(vec![]),
+//             BybitMessage::Event(book) => Self::from((exchange_id, instrument, book)),
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

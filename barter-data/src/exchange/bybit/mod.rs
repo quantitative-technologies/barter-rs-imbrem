@@ -122,15 +122,15 @@ where
     >;
 }
 
-impl<Instrument, Server> StreamSelector<Instrument, OrderBooksL1> for Bybit<Server>
-where
-    Instrument: InstrumentData,
-    Server: ExchangeServer + Debug + Send + Sync,
-{
-    type Stream = ExchangeWsStream<
-        StatelessTransformer<Self, Instrument::Id, OrderBooksL1, BybitMessage<BybitOrderBook>>,
-    >;
-}
+// impl<Instrument, Server> StreamSelector<Instrument, OrderBooksL1> for Bybit<Server>
+// where
+//     Instrument: InstrumentData,
+//     Server: ExchangeServer + Debug + Send + Sync,
+// {
+//     type Stream = ExchangeWsStream<
+//         StatelessTransformer<Self, Instrument::Id, OrderBooksL1, BybitMessage<BybitOrderBook>>,
+//     >;
+// }
 
 impl<'de, Server> serde::Deserialize<'de> for Bybit<Server>
 where
