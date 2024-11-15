@@ -21,6 +21,8 @@ impl BybitChannel {
     ///
     /// See docs: <https://bybit-exchange.github.io/docs/v5/websocket/public/trade>
     pub const ORDER_BOOK_L1: Self = Self("orderbook.1");
+
+    pub const ORDER_BOOK_L2: Self = Self("orderbook.1");
 }
 
 impl<Server, Instrument> Identifier<BybitChannel>

@@ -1,5 +1,5 @@
 use barter_data::{
-    exchange::{binance::spot::BinanceSpot, ExchangeId},
+    exchange::{binance::spot::BinanceSpot, bybit::spot::BybitSpot, ExchangeId},
     streams::Streams,
     subscription::book::OrderBooksL2,
 };
@@ -18,21 +18,21 @@ async fn main() {
 
         // Separate WebSocket connection for BTC_USDT stream since it's very high volume
         .subscribe([
-            (BinanceSpot::default(), "btc", "usdt", InstrumentKind::Spot, OrderBooksL2),
+            (BybitSpot::default(), "btc", "usdt", InstrumentKind::Spot, OrderBooksL2),
         ])
 
         // Separate WebSocket connection for ETH_USDT stream since it's very high volume
-        .subscribe([
-            (BinanceSpot::default(), "eth", "usdt", InstrumentKind::Spot, OrderBooksL2),
-        ])
+        // .subscribe([
+        //     (BinanceSpot::default(), "eth", "usdt", InstrumentKind::Spot, OrderBooksL2),
+        // ])
 
-        // Lower volume Instruments can share a WebSocket connection
-        .subscribe([
-            (BinanceSpot::default(), "xrp", "usdt", InstrumentKind::Spot, OrderBooksL2),
-            (BinanceSpot::default(), "sol", "usdt", InstrumentKind::Spot, OrderBooksL2),
-            (BinanceSpot::default(), "avax", "usdt", InstrumentKind::Spot, OrderBooksL2),
-            (BinanceSpot::default(), "ltc", "usdt", InstrumentKind::Spot, OrderBooksL2),
-        ])
+        // // Lower volume Instruments can share a WebSocket connection
+        // .subscribe([
+        //     (BinanceSpot::default(), "xrp", "usdt", InstrumentKind::Spot, OrderBooksL2),
+        //     (BinanceSpot::default(), "sol", "usdt", InstrumentKind::Spot, OrderBooksL2),
+        //     (BinanceSpot::default(), "avax", "usdt", InstrumentKind::Spot, OrderBooksL2),
+        //     (BinanceSpot::default(), "ltc", "usdt", InstrumentKind::Spot, OrderBooksL2),
+        // ])
         .init()
         .await
         .unwrap();
