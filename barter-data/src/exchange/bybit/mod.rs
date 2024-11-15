@@ -9,7 +9,7 @@ use crate::{
     },
     instrument::InstrumentData,
     subscriber::{validator::WebSocketSubValidator, WebSocketSubscriber},
-    subscription::{trade::PublicTrades, Map},
+    subscription::{book::OrderBooksL1, trade::PublicTrades, Map},
     transformer::stateless::StatelessTransformer,
     ExchangeWsStream,
 };

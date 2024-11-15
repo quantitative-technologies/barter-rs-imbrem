@@ -1,7 +1,7 @@
 use barter_integration::model::instrument::Instrument;
 
 use super::{book::l2::BybitBookUpdater, Bybit, ExchangeServer};
-use crate::{exchange::{ExchangeId, StreamSelector}, subscription::book::{OrderBook, OrderBooksL1, OrderBooksL2}, transformer::book::MultiBookTransformer, ExchangeWsStream};
+use crate::{exchange::{ExchangeId, StreamSelector}, subscription::book::{OrderBooksL1, OrderBooksL2}, transformer::book::MultiBookTransformer, ExchangeWsStream};
 //use crate::exchange::bybit::book::l1::BybitBookL1Updater;
 
 /// [`BybitSpot`] WebSocket server base url.
@@ -32,7 +32,7 @@ impl ExchangeServer for BybitServerSpot {
 
 // impl StreamSelector<Instrument, OrderBooksL1> for BybitSpot {
 //     type Stream = ExchangeWsStream<
-//         MultiBookTransformer<Self, Instrument, OrderBook, BybitBookL1Updater>,
+//         MultiBookTransformer<Self, Instrument, OrderBooksL1, BybitBookUpdater>,
 //     >;
 // }
 
