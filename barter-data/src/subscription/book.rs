@@ -114,6 +114,19 @@ impl OrderBook {
         }
     }
 }
+pub trait IntoOrderBookL1 {
+    fn into_l1(&self) -> OrderBookL1;
+}
+
+impl IntoOrderBookL1 for OrderBook {
+    fn into_l1(&self) -> OrderBookL1 {
+        OrderBookL1 {
+            last_update_time: self.last_update_time,
+            best_bid: self.bids.levels.first().cloned().unwrap_or_default(),
+            best_ask: self.asks.levels.first().cloned().unwrap_or_default(),
+        }
+    }
+}
 
 /// Normalised Barter [`Level`]s for one [`Side`] of the [`OrderBook`].
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Deserialize, Serialize)]
