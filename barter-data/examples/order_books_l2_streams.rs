@@ -7,8 +7,8 @@ use barter_integration::model::instrument::kind::InstrumentKind;
 use tracing::info;
 use futures::StreamExt;
 
-const USE_BYBIT: bool = true;
-const USE_BINANCE: bool = false;
+const USE_BYBIT: bool = false;
+const USE_BINANCE: bool = true;
 
 #[rustfmt::skip]
 #[tokio::main]
@@ -20,17 +20,49 @@ async fn main() {
     let mut builder = Streams::<OrderBooksL2>::builder();
 
     // Add Bybit subscription if enabled
+    // NOTE: Bybit OrderBookL2 is currently set to depth=1 (i.e. orderbook.1).
+    //       This can be modified in `barter-data/src/exchange/bybit/channel.rs`.
     if USE_BYBIT {
-        builder = builder.subscribe([
-            (BybitSpot::default(), "btc", "usdt", InstrumentKind::Spot, OrderBooksL2),
-        ]);
+        builder = builder
+            // Separate WebSocket connection for BTC_USDT stream since it's very high volume
+            .subscribe([
+                (BybitSpot::default(), "btc", "usdt", InstrumentKind::Spot, OrderBooksL2),
+            ])
+
+            // Separate WebSocket connection for ETH_USDT stream since it's very high volume
+            .subscribe([
+                (BybitSpot::default(), "eth", "usdt", InstrumentKind::Spot, OrderBooksL2),
+            ])
+
+            // Lower volume Instruments can share a WebSocket connection
+            .subscribe([
+                (BybitSpot::default(), "xrp", "usdt", InstrumentKind::Spot, OrderBooksL2),
+                (BybitSpot::default(), "sol", "usdt", InstrumentKind::Spot, OrderBooksL2),
+                (BybitSpot::default(), "avax", "usdt", InstrumentKind::Spot, OrderBooksL2),
+                (BybitSpot::default(), "ltc", "usdt", InstrumentKind::Spot, OrderBooksL2),
+            ])
     }
 
     // Add Binance subscription if enabled
     if USE_BINANCE {
-        builder = builder.subscribe([
-            (BinanceSpot::default(), "btc", "usdt", InstrumentKind::Spot, OrderBooksL2),
-        ]);
+        builder = builder
+             // Separate WebSocket connection for BTC_USDT stream since it's very high volume
+            .subscribe([
+                (BinanceSpot::default(), "btc", "usdt", InstrumentKind::Spot, OrderBooksL2),
+            ])
+
+            // Separate WebSocket connection for ETH_USDT stream since it's very high volume
+            .subscribe([
+                (BinanceSpot::default(), "eth", "usdt", InstrumentKind::Spot, OrderBooksL2),
+            ])
+
+            // Lower volume Instruments can share a WebSocket connection
+            .subscribe([
+                (BinanceSpot::default(), "xrp", "usdt", InstrumentKind::Spot, OrderBooksL2),
+                (BinanceSpot::default(), "sol", "usdt", InstrumentKind::Spot, OrderBooksL2),
+                (BinanceSpot::default(), "avax", "usdt", InstrumentKind::Spot, OrderBooksL2),
+                (BinanceSpot::default(), "ltc", "usdt", InstrumentKind::Spot, OrderBooksL2),
+            ])
     }
 
     // Initialize streams
