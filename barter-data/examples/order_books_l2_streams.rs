@@ -7,8 +7,8 @@ use barter_integration::model::instrument::kind::InstrumentKind;
 use tracing::info;
 use futures::StreamExt;
 
-const USE_BYBIT: bool = false;
-const USE_BINANCE: bool = true;
+const USE_BYBIT: bool = true;
+const USE_BINANCE: bool = false;
 
 #[rustfmt::skip]
 #[tokio::main]
