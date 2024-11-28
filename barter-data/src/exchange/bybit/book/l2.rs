@@ -10,7 +10,7 @@ use tokio::sync::mpsc;
 use crate::{
     error::DataError,
     exchange::{
-        bybit::{channel::BybitChannel, message::{BybitPayload, Delta, Snapshot, ValidateType}},
+        bybit::{channel::BybitChannel, message::{BybitMessage, BybitPayload, Delta, Snapshot, ValidateType}},
         subscription::ExchangeSub,
     },
     subscription::book::{Level, OrderBook, OrderBookSide},
@@ -164,6 +164,15 @@ impl Identifier<Option<SubscriptionId>> for BybitBookUpdate {
     }
 }
 
+impl Identifier<Option<SubscriptionId>> for BybitMessage<BybitBookUpdate> {
+    fn id(&self) -> Option<SubscriptionId> {
+        match self {
+            BybitMessage::Event(event) => event.id(),
+            BybitMessage::Response(_) => None,
+        }
+    }
+}
+
 /// Test
 //use chrono::Utc;
 //use barter_integration::model::Side;
@@ -188,7 +197,7 @@ impl Identifier<Option<SubscriptionId>> for BybitBookUpdate {
 #[async_trait]
 impl OrderBookUpdater for BybitBookUpdater {
     type OrderBook = OrderBook;
-    type Update = BybitBookUpdate;
+    type Update = BybitMessage<BybitBookUpdate>;
 
     async fn init<Exchange, Kind>(
         _: mpsc::UnboundedSender<WsMessage>,
@@ -212,7 +221,7 @@ impl OrderBookUpdater for BybitBookUpdater {
         update: Self::Update,
     ) -> Result<Option<Self::OrderBook>, DataError> {
         match update {
-            BybitBookUpdate::Snapshot(snapshot) => {
+            BybitMessage::Event(BybitBookUpdate::Snapshot(snapshot)) => {
                 // Replace entire book with snapshot
                 self.validate_snapshot_update(&snapshot)?;
 
@@ -220,7 +229,7 @@ impl OrderBookUpdater for BybitBookUpdater {
                 *book = OrderBook::from(snapshot);
                 Ok(Some(book.snapshot()))
             }
-            BybitBookUpdate::Delta(delta) => {
+            BybitMessage::Event(BybitBookUpdate::Delta(delta)) => {
  
                 self.validate_delta_update(&delta)?;
 
@@ -232,6 +241,10 @@ impl OrderBookUpdater for BybitBookUpdater {
                 self.updates_processed += 1;
 
                 Ok(Some(book.snapshot()))
+            }
+            BybitMessage::Response(_) => {
+                // Ignore
+                Ok(None)
             }
         }
     }
@@ -1153,7 +1166,7 @@ mod tests {
             struct TestCase {
                 updater: BybitBookUpdater,
                 book: OrderBook,
-                input: BybitBookUpdate,
+                input: BybitMessage<BybitBookUpdate>,
                 expected: Result<Option<OrderBook>, DataError>,
             }
 
@@ -1171,7 +1184,7 @@ mod tests {
                         bids: OrderBookSide::new(Side::Buy, vec![Level::new(50, 1)]),
                         asks: OrderBookSide::new(Side::Sell, vec![Level::new(100, 1)]),
                     },
-                    input: BybitBookUpdate::Snapshot(BybitOrderBookL2Snapshot {
+                    input: BybitMessage::Event(BybitBookUpdate::Snapshot(BybitOrderBookL2Snapshot {
                         subscription_id: SubscriptionId::from("orderbook.50|ETHUSDT"),
                         r#type: "snapshot".to_string(),
                         time: time,
@@ -1187,7 +1200,7 @@ mod tests {
                             ],
                         },
                         ..Default::default()
-                    }),
+                    })),
                     expected: Ok(Some(OrderBook {
                         last_update_time: time,
                         bids: OrderBookSide::new(Side::Buy, vec![Level::new(60, 20), Level::new(50, 10)]),
@@ -1211,7 +1224,7 @@ mod tests {
                             vec![Level::new(150, 1), Level::new(110, 1), Level::new(120, 1)],
                         ),      
                     },
-                    input: BybitBookUpdate::Delta(BybitOrderBookL2Delta {
+                    input: BybitMessage::Event(BybitBookUpdate::Delta(BybitOrderBookL2Delta {
                         subscription_id: SubscriptionId::from("subscription_id"),
                         r#type: "delta".to_string(),
                         time: time,
@@ -1244,7 +1257,7 @@ mod tests {
                             ],
                         },
                         ..Default::default()
-                    }),
+                    })),
                     expected: Ok(Some(OrderBook {
                         last_update_time: time,
                         bids: OrderBookSide::new(
